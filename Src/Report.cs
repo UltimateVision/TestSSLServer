@@ -540,32 +540,12 @@ class Report {
 		w.WriteLine("=========================================");
 		if (ssl2Chain != null) {
 			w.WriteLine("+++++ SSLv2 certificate");
-			PrintCert(w, ssl2Chain, 0);
+			PrintCert(w, ssl2Chain, 0, withPEM);
 		}
 		w.WriteLine("+++++ SSLv3/TLS: {0} certificate chain(s)",
 			chains.Count);
 		foreach (X509Chain xchain in chains.Values) {
-			int n = xchain.Elements.Length;
-			w.WriteLine("+++ chain: length={0}", n);
-			if (xchain.Decodable) {
-				w.WriteLine("names match:        {0}",
-					xchain.NamesMatch ? "yes" : "no");
-				w.WriteLine("includes root:      {0}",
-					xchain.IncludesRoot ? "yes" : "no");
-				w.Write("signature hash(es):");
-				foreach (string name in xchain.SignHashes) {
-					w.Write(" {0}", name);
-				}
-				w.WriteLine();
-			} else if (n == 0) {
-				w.WriteLine("CHAIN IS EMPTY");
-			} else {
-				w.WriteLine("CHAIN PROCESSING ERROR");
-			}
-			for (int i = 0; i < n; i ++) {
-				w.WriteLine("+ certificate order: {0}", i);
-				PrintCert(w, xchain, i);
-			}
+			PrintChain(w, xchain, withPEM);
 		}
 		w.WriteLine("=========================================");
 		w.WriteLine("Server compression support: {0}",
@@ -624,7 +604,32 @@ class Report {
 		}
 	}
 
-	void PrintCert(TextWriter w, X509Chain xchain, int num)
+    public static void PrintChain(TextWriter w, X509Chain xchain, bool withPEM)
+    {
+        int n = xchain.Elements.Length;
+        w.WriteLine("+++ chain: length={0}", n);
+        if (xchain.Decodable) {
+            w.WriteLine("names match:        {0}",
+                xchain.NamesMatch ? "yes" : "no");
+            w.WriteLine("includes root:      {0}",
+                xchain.IncludesRoot ? "yes" : "no");
+            w.Write("signature hash(es):");
+            foreach (string name in xchain.SignHashes) {
+                w.Write(" {0}", name);
+            }
+            w.WriteLine();
+        } else if (n == 0) {
+            w.WriteLine("CHAIN IS EMPTY");
+        } else {
+            w.WriteLine("CHAIN PROCESSING ERROR");
+        }
+        for (int i = 0; i < n; i ++) {
+            w.WriteLine("+ certificate order: {0}", i);
+            PrintCert(w, xchain, i, withPEM);
+        }
+    }
+
+    public static void PrintCert(TextWriter w, X509Chain xchain, int num, bool withPEM)
 	{
 		w.WriteLine("thumprint:  {0}", xchain.ThumbprintsRev[num]);
 		X509Cert xc = xchain.ElementsRev[num];
@@ -663,7 +668,9 @@ class Report {
 			}
 		}
 		if (withPEM) {
-			M.WritePEM(w, "CERTIFICATE", xchain.EncodedRev[num]);
+		    if (xchain.EncodedRev[num] != null) {
+		        M.WritePEM(w, "CERTIFICATE", xchain.EncodedRev[num]);
+		    }
 		}
 	}
 
@@ -859,4 +866,80 @@ class Report {
 				M.ToPEM("CERTIFICATE", xchain.EncodedRev[num]));
 		}
 	}
+
+    public static void UpdateReportAggregator(ReportAggregator aggregator, Report report)
+    {
+        String serverUnderTest = $"{report.ConnName}:{report.ConnPort}";
+        if (report.SSLv2Chain != null) {
+            aggregator.AddSsl2Cert(serverUnderTest, report.SSLv2Chain);
+            X509Cert xc = report.SSLv2Chain.ElementsRev[0];
+            if (xc != null && xc.ValidTo.CompareTo(DateTime.Now) < 0) {
+                aggregator.AddOverduedCertificate(serverUnderTest, xc.ValidTo);
+            }
+        }
+
+        if (report.ssl2Suites != null && report.ssl2Suites.Length > 0)
+        {
+            aggregator.AddSuportedSslVersion(M.VersionString(M.SSLv20));
+            foreach (int s in report.ssl2Suites) {
+                aggregator.AddSupportedCipherSuite(CipherSuite.ToNameV2(s));
+            }
+        }
+
+        aggregator.AddSsl3Certs(serverUnderTest, report.chains.Values);
+        InspectCerts(aggregator, report, serverUnderTest);
+
+        foreach (int v in report.suites.Keys)
+        {
+            aggregator.AddSuportedSslVersion(M.VersionString(v));
+            SupportedCipherSuites scs = report.suites[v];
+            if (scs.PrefClient) {
+                aggregator.AddCipherSuiteSelectionMode("uses client preferences");
+            } else if (scs.PrefServer) {
+                aggregator.AddCipherSuiteSelectionMode("enforce server preferences");
+            } else {
+                aggregator.AddCipherSuiteSelectionMode("complex");
+            }
+            foreach (int s in scs.Suites)
+            {
+                CipherSuite cs;
+                string strength;
+                string fsf;
+                string anon;
+                string kt;
+                if (CipherSuite.ALL.TryGetValue(s, out cs))
+                {
+                    strength = cs.Strength.ToString();
+                    fsf = cs.HasForwardSecrecy ? "f" : "-";
+                    anon = cs.IsAnonymous ? "A" : "-";
+                    kt = cs.ServerKeyType;
+                }
+                else {
+                    strength = "?";
+                    fsf = "?";
+                    anon = "?";
+                    kt = "?";
+                }
+                aggregator.AddSupportedCipherSuite($"{strength}{fsf}{anon} (key: {kt,4})  {CipherSuite.ToName(s)}");
+            }
+        }
+
+        foreach (var warning in report.Warnings) {
+            aggregator.AddWarning(warning.Value);
+        }
+    }
+
+    private static void InspectCerts(ReportAggregator aggregator, Report report, string serverUnderTest)
+    {
+        foreach (var x509Chain in report.chains.Values) {
+            int n = x509Chain.Elements.Length;
+            for (int i = 0; i < n; i++) {
+                X509Cert xc = x509Chain.ElementsRev[0];
+                if (xc != null && xc.ValidTo.CompareTo(DateTime.Now) < 0) {
+                    aggregator.AddOverduedCertificate(serverUnderTest, xc.ValidTo);
+                    return;
+                }
+            }
+        }
+    }
 }

@@ -1,0 +1,106 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
+    <ProjectGuid>{DCCA7F6D-22F6-43A6-9844-5D6ABCDE26AD}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <NoStandardLibraries>false</NoStandardLibraries>
+    <AssemblyName>TestSSLServer</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkProfile>
+    </TargetFrameworkProfile>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|x86' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <PlatformTarget>x86</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>TestSSLServer</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="Newtonsoft.Json, Version=8.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
+      <HintPath>packages\Newtonsoft.Json.8.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="nunit.framework, Version=3.0.5813.39031, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
+      <HintPath>packages\NUnit.3.0.1\lib\net45\nunit.framework.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.IO.Compression.FileSystem" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="build.cmd" />
+    <None Include="build.sh" />
+    <None Include="packages.config" />
+    <None Include="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Asn1\AsnElt.cs" />
+    <Compile Include="Asn1\AsnException.cs" />
+    <Compile Include="Asn1\AsnIO.cs" />
+    <Compile Include="Asn1\AsnOID.cs" />
+    <Compile Include="Src\AlgorithmIdentifier.cs" />
+    <Compile Include="Src\CipherSuite.cs" />
+    <Compile Include="Src\FullTest.cs" />
+    <Compile Include="Src\HList.cs" />
+    <Compile Include="Src\HMParser.cs" />
+    <Compile Include="Src\HTTPProx.cs" />
+    <Compile Include="Src\JSON.cs" />
+    <Compile Include="Src\M.cs" />
+    <Compile Include="Src\PKIXCurve.cs" />
+    <Compile Include="Src\Report.cs" />
+    <Compile Include="Src\SSL2.cs" />
+    <Compile Include="Src\SSLAlertException.cs" />
+    <Compile Include="Src\SSLCurve.cs" />
+    <Compile Include="Src\SSLRecord.cs" />
+    <Compile Include="Src\SSLTestArgs.cs" />
+    <Compile Include="Src\SSLTestBuilder.cs" />
+    <Compile Include="Src\SSLTestResult.cs" />
+    <Compile Include="Src\SupportedCipherSuites.cs" />
+    <Compile Include="Src\TestSSLServer.cs" />
+    <Compile Include="Src\X509Cert.cs" />
+    <Compile Include="Src\X509Chain.cs" />
+    <Compile Include="Tests\IpRangeTest.cs" />
+    <Compile Include="Utils\IpRange.cs" />
+    <Compile Include="Utils\IpRangeEnumerator.cs" />
+    <Compile Include="Utils\ReportAggregator.cs" />
+    <Compile Include="Utils\SslPortEnumerator.cs" />
+    <Compile Include="X500\DNPart.cs" />
+    <Compile Include="X500\X500Name.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include=".git\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />
+  <ProjectExtensions>
+    <VisualStudio AllowExistingFolder="true" />
+  </ProjectExtensions>
+</Project>
